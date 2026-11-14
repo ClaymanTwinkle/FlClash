@@ -30,6 +30,14 @@
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Lets only FlClash itself (its tile and launcher shortcuts) start, stop or toggle the VPN
+         through QuickActionActivity; without it any installed app could switch the VPN off. -->
+    <permission
+        android:name="${applicationId}.permission.QUICK_ACTION"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="${applicationId}.permission.QUICK_ACTION" />
+
     <application
         android:name=".FlClashApplication"
         android:banner="@mipmap/ic_banner"
@@ -79,6 +87,7 @@
             android:name=".QuickActionActivity"
             android:excludeFromRecents="true"
             android:exported="true"
+            android:permission="${applicationId}.permission.QUICK_ACTION"
             android:theme="@style/TransparentTheme">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
