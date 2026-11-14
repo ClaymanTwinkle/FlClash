@@ -319,14 +319,19 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
       rawConfig['dns']['nameserver'] = [...nameserver, systemDns];
     }
   }
-  if (data.safeMode) {
+  // A profile can open its own inbound servers, which other apps and, with a
+  // wildcard bind, the LAN reach without the app's auth. Android has no use
+  // for them, so they are dropped there as in safe mode.
+  if (data.safeMode || Platform.isAndroid) {
     rawConfig['listeners'] = [];
     rawConfig['tunnels'] = [];
     rawConfig['ss-config'] = '';
     rawConfig['vmess-config'] = '';
     rawConfig['tuic-server'] = {'enable': false};
-    rawConfig['iptables'] = {'enable': false};
     rawConfig['dns']['listen'] = '';
+  }
+  if (data.safeMode) {
+    rawConfig['iptables'] = {'enable': false};
     final rawNtp = rawConfig['ntp'];
     if (rawNtp is Map) {
       rawConfig['ntp'] = {
