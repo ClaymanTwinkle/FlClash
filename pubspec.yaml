@@ -11,6 +11,12 @@ hooks:
       build_assets: true
     rust_api:
       build_assets: true
+    # Android compiles SQLite from the verified amalgamation in third_party/sqlite
+    # rather than downloading the package's prebuilt library.
+    sqlite3:
+      source:
+        android: source
+      path: third_party/sqlite/sqlite3.c
 
 dependencies:
   flutter:
