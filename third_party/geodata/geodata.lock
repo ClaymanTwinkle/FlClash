@@ -1,0 +1,7 @@
+# Written by tool/update_geodata.sh; do not edit by hand.
+repo MetaCubeX/meta-rules-dat
+commit 8a9908e7cc4813a022e8f09abcbcbd9a68c63490
+sha256 304ac8a1cbcc8166e4f5a4f32955e4d0fb77a1bd713583e371b30ee27f3659d8 GEOIP.dat <- geoip.dat
+sha256 3642ffb0dd8b9d820b000420dd2d6c5b8e3989f4e7055e1b55978294f6d62b50 GEOSITE.dat <- geosite.dat
+sha256 ac7d00ebe38b7397254e9d6304f8180a62ae573555efc48e3fdc36630d59b9df GEOIP.metadb <- geoip.metadb
+sha256 3dceeef0f161aee0b48a3e71dd538798f5d95e9f4c2e0bc35f1c62874e22a4d5 ASN.mmdb <- GeoLite2-ASN.mmdb
