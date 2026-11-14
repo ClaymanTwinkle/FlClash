@@ -1,6 +1,5 @@
 package com.follow.clash.common
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -9,12 +8,11 @@ import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.RECEIVER_EXPORTED
-import android.content.Context.RECEIVER_NOT_EXPORTED
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
 import android.os.Build
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -91,20 +89,18 @@ fun Service.startForeground(notification: Notification) {
     }
 }
 
-@SuppressLint("UnspecifiedRegisterReceiverFlag")
+// Below Android 13 a plain registerReceiver is open to every app. ContextCompat keeps a
+// not-exported receiver private there too, behind a signature-level permission.
 fun Context.registerReceiverCompat(
     receiver: BroadcastReceiver,
     filter: IntentFilter,
     exported: Boolean = false,
-) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-    registerReceiver(
-        receiver,
-        filter,
-        if (exported) RECEIVER_EXPORTED else RECEIVER_NOT_EXPORTED,
-    )
-} else {
-    registerReceiver(receiver, filter)
-}
+): Intent? = ContextCompat.registerReceiver(
+    this,
+    receiver,
+    filter,
+    if (exported) ContextCompat.RECEIVER_EXPORTED else ContextCompat.RECEIVER_NOT_EXPORTED,
+)
 
 fun Context.receiveBroadcastFlow(
     exported: Boolean = false,

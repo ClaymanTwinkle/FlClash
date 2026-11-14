@@ -12,6 +12,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -512,10 +513,18 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             Intent.EXTRA_INTENT,
             Intent::class.java,
         )
-        if (confirmation == null) {
+        // Starting an intent taken from a broadcast lends it FlClash's identity, so only
+        // the system installer's confirmation is started, and never with URI grants.
+        if (confirmation == null || !opensSystemApp(confirmation)) {
             installPackageCallback.resolve(PackageInstaller.STATUS_FAILURE)
             return@onMainThread
         }
+        confirmation.removeFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+        )
         val activity = activity
         if (activity != null) {
             activity.startActivity(confirmation)
@@ -524,6 +533,12 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 confirmation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         }
+    }
+
+    private fun opensSystemApp(intent: Intent): Boolean {
+        val target = intent.resolveActivityInfo(GlobalState.application.packageManager, 0)
+            ?: return false
+        return target.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0
     }
 
     private fun handleGetPackageIcon(call: MethodCall, result: Result) = reply(result) {
