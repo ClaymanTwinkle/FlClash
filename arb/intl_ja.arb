@@ -897,6 +897,7 @@
   "ipQualityShort": "品質",
   "ipTypeUnknown": "タイプ不明",
   "tapIconToRetry": "アイコンをタップして再試行",
+  "tapIconToCheck": "アイコンをタップして確認",
   "networkTakeover": "トラフィックの引き継ぎ",
   "portValue": "ポート {port}",
   "serviceAbnormalCount": "{count} 件に問題",

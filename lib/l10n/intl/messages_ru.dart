@@ -2130,6 +2130,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "systemProxy": MessageLookupByLibrary.simpleMessage("Системный прокси"),
     "tab": MessageLookupByLibrary.simpleMessage("Вкладки"),
     "tabAnimation": MessageLookupByLibrary.simpleMessage("Анимация вкладок"),
+    "tapIconToCheck": MessageLookupByLibrary.simpleMessage(
+      "Нажмите на значок, чтобы проверить",
+    ),
     "tapIconToRetry": MessageLookupByLibrary.simpleMessage(
       "Нажмите на значок, чтобы повторить",
     ),

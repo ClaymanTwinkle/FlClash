@@ -897,6 +897,7 @@
   "ipQualityShort": "质量",
   "ipTypeUnknown": "类型未知",
   "tapIconToRetry": "点击图标重试",
+  "tapIconToCheck": "点击图标查询",
   "networkTakeover": "网络接管",
   "portValue": "端口 {port}",
   "serviceAbnormalCount": "{count} 项异常",

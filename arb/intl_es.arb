@@ -897,6 +897,7 @@
   "ipQualityShort": "Calidad",
   "ipTypeUnknown": "Tipo desconocido",
   "tapIconToRetry": "Toca el icono para reintentar",
+  "tapIconToCheck": "Toca el icono para consultar",
   "networkTakeover": "Control del tráfico",
   "portValue": "Puerto {port}",
   "serviceAbnormalCount": "{count, plural, =1{1 problema} other{{count} problemas}}",

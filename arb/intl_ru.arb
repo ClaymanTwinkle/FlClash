@@ -897,6 +897,7 @@
   "ipQualityShort": "Качество",
   "ipTypeUnknown": "Тип неизвестен",
   "tapIconToRetry": "Нажмите на значок, чтобы повторить",
+  "tapIconToCheck": "Нажмите на значок, чтобы проверить",
   "networkTakeover": "Перехват трафика",
   "portValue": "Порт {port}",
   "serviceAbnormalCount": "Проблем: {count}",

@@ -1570,6 +1570,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "systemProxy": MessageLookupByLibrary.simpleMessage("系统代理"),
     "tab": MessageLookupByLibrary.simpleMessage("标签页"),
     "tabAnimation": MessageLookupByLibrary.simpleMessage("选项卡动画"),
+    "tapIconToCheck": MessageLookupByLibrary.simpleMessage("点击图标查询"),
     "tapIconToRetry": MessageLookupByLibrary.simpleMessage("点击图标重试"),
     "tapToAuthorize": MessageLookupByLibrary.simpleMessage("点击授权"),
     "target": MessageLookupByLibrary.simpleMessage("目标"),

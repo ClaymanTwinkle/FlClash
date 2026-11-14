@@ -45,16 +45,13 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
     with ProbeStartHold<CurrentOutboundCard> {
   late final OutboundIpProbe _probe;
 
+  // A lookup hands the exit address (the real one while nothing is proxied)
+  // to third-party IP services, so the card never watches the route; only a
+  // tap on the badge looks it up, and an address it shows was asked for.
   @override
   void initState() {
     super.initState();
-    _probe = ref.read(outboundIpProbeProvider.notifier)..watch(routedOutbound);
-  }
-
-  @override
-  void dispose() {
-    _probe.unwatch(routedOutbound);
-    super.dispose();
+    _probe = ref.read(outboundIpProbeProvider.notifier);
   }
 
   void _refresh(String? ip) {
@@ -80,13 +77,14 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
     final ipInfo = entry.value;
     final phase = shownPhase(entry);
     final failed = phase == ProbePhase.failed && ipInfo == null;
+    final idle = phase == ProbePhase.empty && ipInfo == null;
     final qualityState = ipInfo == null
         ? null
         : ref.watch(ipQualityProvider(ipInfo.ip));
     final quality = qualityState?.value;
     final qualityLoading =
         qualityState != null && quality == null && qualityState.isLoading;
-    final loading = ipInfo == null ? !failed : qualityLoading;
+    final loading = ipInfo == null ? !(failed || idle) : qualityLoading;
     final metrics = _OutboundMetrics.of(density);
     final appLocalizations = context.appLocalizations;
     final colorScheme = context.colorScheme;
@@ -178,6 +176,7 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
                       _ExitRow(
                         info: ipInfo,
                         failed: failed,
+                        idle: idle,
                         loading: loading,
                         checking: phase == ProbePhase.probing || qualityLoading,
                         onRefresh: () => _refresh(ipInfo?.ip),
@@ -293,6 +292,7 @@ class _ExitRow extends StatelessWidget {
   const _ExitRow({
     required this.info,
     required this.failed,
+    required this.idle,
     required this.loading,
     required this.checking,
     required this.onRefresh,
@@ -304,6 +304,9 @@ class _ExitRow extends StatelessWidget {
 
   final IpInfo? info;
   final bool failed;
+
+  /// Nothing has been looked up yet: lookups wait for a tap on the badge.
+  final bool idle;
   final bool loading;
   final bool checking;
   final VoidCallback onRefresh;
@@ -343,6 +346,12 @@ class _ExitRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: style.copyWith(color: colorScheme.error),
           )
+        : idle
+        ? Text(
+            '--',
+            maxLines: 1,
+            style: style.copyWith(color: colorScheme.onSurfaceVariant),
+          )
         : SkeletonText(width: 140, style: style);
     return Row(
       spacing: 12,
@@ -367,13 +376,15 @@ class _ExitRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              if (failed)
+              if (failed || idle)
                 SizedBox(
                   height: _chipHeight(large),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(
-                      appLocalizations.tapIconToRetry,
+                      failed
+                          ? appLocalizations.tapIconToRetry
+                          : appLocalizations.tapIconToCheck,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: DashboardText.label(context),

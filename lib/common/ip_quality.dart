@@ -27,8 +27,12 @@ typedef _Answer = ({IpQuality quality, bool inferred});
 
 /// A later wave only starts while the earlier ones are still unanswered, so
 /// the sources with the tightest free quotas are asked last and rarely.
+///
+/// ip-api.com is left out: its free plan is plain HTTP, which would show the
+/// looked-up address to anyone on the path. The source stays defined so
+/// cached results that name it still read back.
 const _waves = [
-  [IpQualitySource.identMe, IpQualitySource.ipApiCom, IpQualitySource.ipQuery],
+  [IpQualitySource.identMe, IpQualitySource.ipQuery],
   [IpQualitySource.ipLocate],
   [IpQualitySource.ipApiIs],
   [IpQualitySource.proxyCheck],

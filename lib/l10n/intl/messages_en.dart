@@ -2028,6 +2028,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "systemProxy": MessageLookupByLibrary.simpleMessage("System proxy"),
     "tab": MessageLookupByLibrary.simpleMessage("Tab"),
     "tabAnimation": MessageLookupByLibrary.simpleMessage("Tab animation"),
+    "tapIconToCheck": MessageLookupByLibrary.simpleMessage(
+      "Tap the icon to look up",
+    ),
     "tapIconToRetry": MessageLookupByLibrary.simpleMessage(
       "Tap the icon to retry",
     ),

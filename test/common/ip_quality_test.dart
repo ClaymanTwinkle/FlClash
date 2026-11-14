@@ -109,25 +109,6 @@ void main() {
         asn: 64500,
       ),
     ),
-    IpQualitySource.ipApiCom: (
-      {
-        'status': 'success',
-        'isp': 'Example Hosting',
-        'org': 'Example Cloud',
-        'as': 'AS64501 Example Hosting',
-        'mobile': false,
-        'proxy': true,
-        'hosting': true,
-      },
-      const IpQuality(
-        ip: _ip,
-        source: IpQualitySource.ipApiCom,
-        type: IpType.hosting,
-        organization: 'Example Cloud',
-        asn: 64501,
-        isProxy: true,
-      ),
-    ),
     IpQualitySource.ipQuery: (
       {
         'ip': _ip,
@@ -237,7 +218,6 @@ void main() {
       lookup.adapter.requested.map((uri) => uri.toString()),
       unorderedEquals([
         'https://ident.me/json',
-        'http://ip-api.com/json/$_ip?fields=status,isp,org,as,mobile,proxy,hosting',
         'https://api.ipquery.io/$_ip?format=json',
         'https://iplocate.io/api/lookup/$_ip',
         'https://proxycheck.io/v3/$_ip',
@@ -246,15 +226,24 @@ void main() {
     );
   });
 
+  test('never sends the address over plain HTTP', () async {
+    final lookup = _lookup({});
+    await expectLater(lookup.result, throwsA(isA<IpQualityLookupException>()));
+    expect(lookup.adapter.requested, isNotEmpty);
+    expect(
+      lookup.adapter.requested.map((uri) => uri.scheme),
+      everyElement('https'),
+    );
+    expect(
+      lookup.adapter.requested.map((uri) => uri.host),
+      isNot(contains('ip-api.com')),
+    );
+  });
+
   test(
     'takes the first source that states a type and cancels the rest',
     () async {
       final lookup = _lookup({
-        'ip-api.com': _ok({
-          'status': 'success',
-          'hosting': false,
-          'mobile': false,
-        }, const Duration(milliseconds: 10)),
         'ident.me': _ok({
           'ip': _ip,
           'type': 'business',
@@ -289,12 +278,7 @@ void main() {
     expect(quality.source, IpQualitySource.ipLocate);
     expect(
       lookup.adapter.requested.map((uri) => uri.host),
-      unorderedEquals([
-        'ident.me',
-        'ip-api.com',
-        'api.ipquery.io',
-        'iplocate.io',
-      ]),
+      unorderedEquals(['ident.me', 'api.ipquery.io', 'iplocate.io']),
     );
   });
 
@@ -321,13 +305,8 @@ void main() {
     () async {
       final lookup = _lookup(
         {
-          'ip-api.com': _ok({
-            'status': 'success',
-            'isp': 'Example Broadband',
-            'hosting': false,
-            'mobile': false,
-          }),
           'api.ipquery.io': _ok({
+            'isp': {'isp': 'Example Broadband'},
             'risk': {'is_datacenter': false, 'is_mobile': false},
           }),
           'ident.me': _ok({
@@ -341,17 +320,16 @@ void main() {
 
       final quality = await lookup.result;
 
-      expect(quality.source, IpQualitySource.ipApiCom);
+      expect(quality.source, IpQualitySource.ipQuery);
       expect(quality.type, IpType.residential);
       expect(quality.organization, 'Example Broadband');
-      expect(lookup.adapter.requested, hasLength(6));
+      expect(lookup.adapter.requested, hasLength(5));
     },
   );
 
   test('lists why each source failed when none determines a type', () async {
     final lookup = _lookup({
       'ident.me': _ok({'ip': '198.51.100.1', 'type': 'isp'}),
-      'ip-api.com': _ok({'status': 'fail', 'message': 'private range'}),
       'api.ipquery.io': _status(429),
       'iplocate.io': _ok({
         'company': {'name': 'Example Leasing'},
@@ -370,10 +348,6 @@ void main() {
               (
                 source: IpQualitySource.identMe,
                 status: IpQualitySourceStatus.ipMismatch,
-              ),
-              (
-                source: IpQualitySource.ipApiCom,
-                status: IpQualitySourceStatus.failed,
               ),
               (
                 source: IpQualitySource.ipQuery,

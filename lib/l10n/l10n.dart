@@ -7428,6 +7428,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Tap the icon to look up`
+  String get tapIconToCheck {
+    return Intl.message(
+      'Tap the icon to look up',
+      name: 'tapIconToCheck',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Traffic takeover`
   String get networkTakeover {
     return Intl.message(

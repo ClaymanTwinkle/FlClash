@@ -308,6 +308,8 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.tap(find.byTooltip('Retry'));
+      await tester.pump();
       await tester.pump(commonDuration);
       expect(find.text('Unknown type'), findsOneWidget);
 
@@ -439,44 +441,33 @@ void main() {
       tester,
     ).read(outboundIpProbeProvider).entryOf(routedOutbound).phase;
 
-    testWidgets('that fails as the proxy starts shows as checking', (
-      tester,
-    ) async {
+    testWidgets('looks nothing up until its badge is tapped', (tester) async {
       final core = _MockCore();
-      var epoch = 1;
+      final asked = <String>[];
       when(() => core.outboundIp(any())).thenAnswer((invocation) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
-        final failing = params.proxyName != directOutbound && epoch == 1;
-        if (failing) {
-          throw TimeoutException('no answer');
-        }
-        return _address(coreEpoch: epoch);
+        asked.add(params.proxyName);
+        return _address();
       });
       await tester.pumpWidget(_probingApp(core));
       await tester.pump();
-      await tester.pump(commonDuration);
-      expect(find.text(_ip), findsOneWidget);
-
-      start(tester);
-      await tester.pump();
       await tester.pump(probeSettleDuration);
-      expect(phaseOf(tester), ProbePhase.failed);
-      expect(find.text('Check failed'), findsNothing);
-      expect(find.byType(SkeletonText), findsNWidgets(2));
 
-      epoch = 2;
-      containerOf(tester)
-          .read(routeTrackerProvider.notifier)
-          .applySnapshot(const RouteSnapshot(coreEpoch: 2, routeVersion: 1));
-      await tester.pump(probeSettleDuration);
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 700));
-      expect(find.text(_ip), findsOneWidget);
+      expect(asked, isEmpty);
+      expect(phaseOf(tester), ProbePhase.empty);
+      expect(find.text('--'), findsOneWidget);
+      expect(find.text('Tap the icon to look up'), findsOneWidget);
       expect(find.byType(SkeletonText), findsNothing);
+
+      await tester.tap(find.byTooltip('Retry'));
+      await tester.pump();
+      await tester.pump(commonDuration);
+      expect(asked, [directOutbound]);
+      expect(find.text(_ip), findsOneWidget);
     });
 
-    testWidgets('that fails past the start is shown, then checked again', (
+    testWidgets('does not look up again on its own when the proxy starts', (
       tester,
     ) async {
       final core = _MockCore();
@@ -485,34 +476,53 @@ void main() {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         asked.add(params.proxyName);
-        if (params.proxyName != directOutbound) {
-          throw TimeoutException('no answer');
-        }
         return _address();
       });
       await tester.pumpWidget(_probingApp(core));
       await tester.pump();
+      await tester.tap(find.byTooltip('Retry'));
+      await tester.pump();
       await tester.pump(commonDuration);
+      expect(find.text(_ip), findsOneWidget);
 
       start(tester);
       await tester.pump();
       await tester.pump(probeSettleDuration);
-      await tester.tap(find.byTooltip('Retry'));
-      await tester.pump();
-      expect(phaseOf(tester), ProbePhase.failed);
-      expect(find.text('Check failed'), findsNothing);
-      expect(asked, [directOutbound, routedOutbound]);
-
       await tester.pump(const Duration(seconds: 5));
-      expect(find.text('Check failed'), findsOneWidget);
-      expect(find.text('Tap the icon to retry'), findsOneWidget);
+
+      expect(asked, [directOutbound]);
+      expect(find.text(_ip), findsNothing);
+      expect(find.text('Tap the icon to look up'), findsOneWidget);
+    });
+
+    testWidgets('a failed lookup is shown and checked again on a tap', (
+      tester,
+    ) async {
+      final core = _MockCore();
+      final asked = <String>[];
+      when(() => core.outboundIp(any())).thenAnswer((invocation) async {
+        final params =
+            invocation.positionalArguments.single as OutboundIpParams;
+        asked.add(params.proxyName);
+        throw TimeoutException('no answer');
+      });
+      await tester.pumpWidget(_probingApp(core));
+      await tester.pump();
       await tester.tap(find.byTooltip('Retry'));
       await tester.pump();
-      expect(asked, [directOutbound, routedOutbound, routedOutbound]);
       await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 700));
+
+      expect(phaseOf(tester), ProbePhase.failed);
       expect(find.text('Check failed'), findsOneWidget);
-      expect(find.byType(SkeletonText), findsNothing);
+      expect(find.text('Tap the icon to retry'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Retry'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(asked, [directOutbound, directOutbound]);
+      expect(find.text('Check failed'), findsOneWidget);
     });
   });
 

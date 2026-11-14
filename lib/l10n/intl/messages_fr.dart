@@ -2193,6 +2193,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "tabAnimation": MessageLookupByLibrary.simpleMessage(
       "Animation des onglets",
     ),
+    "tapIconToCheck": MessageLookupByLibrary.simpleMessage(
+      "Appuyez sur l’icône pour vérifier",
+    ),
     "tapIconToRetry": MessageLookupByLibrary.simpleMessage(
       "Appuyez sur l’icône pour réessayer",
     ),
