@@ -65,6 +65,12 @@ Map<String, dynamic> release(String? body) => <String, dynamic>{
   'body': body,
 };
 
+/// Automatic checks are off by default; these tests start from a user who
+/// turned them on.
+void enableAutoCheck(ProviderContainer container) => container
+    .read(appSettingProvider.notifier)
+    .update((state) => state.copyWith(autoCheckUpdate: true));
+
 Future<ProviderContainer> pumpApp(WidgetTester tester, {Locale? locale}) async {
   final container = ProviderContainer();
   addTearDown(container.dispose);
@@ -162,6 +168,7 @@ void main() {
     tester,
   ) async {
     final container = await pumpApp(tester);
+    enableAutoCheck(container);
 
     final shown = container
         .read(commonActionProvider.notifier)
@@ -299,6 +306,7 @@ void main() {
     tester,
   ) async {
     final container = await pumpApp(tester);
+    enableAutoCheck(container);
 
     final shown = container
         .read(commonActionProvider.notifier)

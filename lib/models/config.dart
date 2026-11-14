@@ -254,7 +254,8 @@ abstract class AppSettingProps with _$AppSettingProps {
     @JsonKey(readValue: _readTabAnimation)
     TabAnimation tabAnimation,
     @Default(true) bool floatingNavigationBar,
-    @Default(true) bool autoCheckUpdate,
+    // Off by default: a check calls the GitHub API on every launch.
+    @Default(false) bool autoCheckUpdate,
     @Default(true)
     @JsonKey(readValue: _readSidebarExpanded)
     bool sidebarExpanded,
