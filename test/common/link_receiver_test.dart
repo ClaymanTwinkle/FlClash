@@ -18,7 +18,8 @@ Future<(int, String)> _request(
   String? link,
   String? body,
 }) async {
-  final client = HttpClient();
+  // A proxy from the environment would answer for a receiver that stopped.
+  final client = HttpClient()..findProxy = (_) => 'DIRECT';
   try {
     final request = await client.openUrl(method, uri);
     final form =
