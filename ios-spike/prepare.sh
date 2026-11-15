@@ -20,7 +20,7 @@ PATH="$tools:$PATH" gomobile bind \
   -target=ios/arm64 -iosversion=15.0 \
   -tags="$tags${SPIKE_TAGS:+,$SPIKE_TAGS}" \
   -ldflags="$ldflags -X github.com/metacubex/mihomo/constant.Version=$version -X=runtime.godebugDefault=$godebug" \
-  -o "$root/libclash/ios/ClashCore.xcframework" ./mobile
+  -o "$root/libclash/ios-spike/ClashCore.xcframework" ./mobile
 
 payload=$root/ios-spike/SpikeData
 rm -rf "$payload"

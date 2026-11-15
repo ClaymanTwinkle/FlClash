@@ -56,5 +56,5 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: PacketTunnel/Bridging.h
         OTHER_LDFLAGS: -lresolv
     dependencies:
-      - framework: ../libclash/ios/ClashCore.xcframework
+      - framework: ../libclash/ios-spike/ClashCore.xcframework
         embed: false
