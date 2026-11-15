@@ -99,8 +99,10 @@ for apk in build/app/outputs/flutter-apk/*-release.apk; do
   [ -e "$apk" ] || continue
   shasum -a 256 "$apk"
   if [ -n "$apksigner" ]; then
-    "$apksigner" verify --print-certs "$apk" | grep -E 'Signer #1 certificate (DN|SHA-256)'
-    if "$apksigner" verify --print-certs "$apk" | grep -q 'CN=Android Debug'; then
+    # Only a report: an apksigner that cannot run here must not fail the build.
+    certs=$("$apksigner" verify --print-certs "$apk" 2>&1) || true
+    grep -E 'certificate (DN|SHA-256)' <<<"$certs" || echo "$certs"
+    if grep -q 'CN=Android Debug' <<<"$certs"; then
       echo "warning: signed with the debug key (package com.follow.clash.dev)" >&2
     fi
   fi
