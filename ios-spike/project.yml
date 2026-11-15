@@ -1,0 +1,60 @@
+name: FlClashSpike
+options:
+  bundleIdPrefix: com.flclashspike
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+targets:
+  FlClashSpike:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+      - path: SpikeData
+        type: folder
+        buildPhase: resources
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: FlClash Spike
+        UILaunchScreen: {}
+    entitlements:
+      path: App/App.entitlements
+      properties:
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.flclashspike.app
+    dependencies:
+      - target: PacketTunnel
+  PacketTunnel:
+    type: app-extension
+    platform: iOS
+    sources:
+      - PacketTunnel
+      - Shared
+    info:
+      path: PacketTunnel/Info.plist
+      properties:
+        CFBundleDisplayName: PacketTunnel
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
+    entitlements:
+      path: PacketTunnel/PacketTunnel.entitlements
+      properties:
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.flclashspike.app.tunnel
+        SWIFT_OBJC_BRIDGING_HEADER: PacketTunnel/Bridging.h
+        OTHER_LDFLAGS: -lresolv
+    dependencies:
+      - framework: ../libclash/ios/ClashCore.xcframework
+        embed: false
