@@ -102,6 +102,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
   override func startTunnel(options _: [String: NSObject]?, completionHandler: @escaping (Error?) -> Void) {
     MobileSetMemoryLimit(goMemoryLimit)
     MobileMarkPacketTunnel()
+    MobileSetCacheFile(AppGroup.processCacheFile)
     watchMemoryPressure()
     guard let options = TunnelSettings.loadVpnOptions() else {
       completionHandler(TunnelError.missingState("vpn options"))

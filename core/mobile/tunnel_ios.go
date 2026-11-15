@@ -14,3 +14,7 @@ func SetMemoryLimit(limit int64) int64 {
 func MarkPacketTunnel() {
 	core.MarkPacketTunnel()
 }
+
+func SetCacheFile(file string) {
+	core.SetCacheFile(file)
+}

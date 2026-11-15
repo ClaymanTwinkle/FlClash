@@ -28,6 +28,7 @@ final class ServicePlugin: NSObject, FlutterPlugin {
   }
 
   static func register(with registrar: FlutterPluginRegistrar) {
+    MobileSetCacheFile(AppGroup.processCacheFile)
     let messenger = registrar.messenger()
     let channel = FlutterMethodChannel(name: serviceChannelName, binaryMessenger: messenger)
     let plugin = MainActor.assumeIsolated { ServicePlugin(channel: channel) }

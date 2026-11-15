@@ -13,6 +13,15 @@ enum AppGroup {
 
   static var setupParamsFile: URL { stateDirectory.appendingPathComponent("setup-params.json") }
 
+  /// The Core's cache.db stays in this process's own container: bbolt keeps it
+  /// locked, and a suspended app holding a lock in the App Group gets killed.
+  static var processCacheFile: String {
+    let directory = try? FileManager.default.url(
+      for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
+    )
+    return (directory ?? FileManager.default.temporaryDirectory).appendingPathComponent("cache.db").path
+  }
+
   static var tunnelBundleIdentifier: String { "\(Bundle.main.bundleIdentifier!).PacketTunnel" }
 
   private static var stateDirectory: URL {
