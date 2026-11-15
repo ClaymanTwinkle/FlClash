@@ -45,9 +45,11 @@ enum TunnelSettings {
     ipv4.includedRoutes = ipv4Routes.isEmpty ? [.default()] : ipv4Routes
     settings.ipv4Settings = ipv4
 
-    if options.ipv6 {
+    // A tunnel that takes all IPv4 takes all IPv6 too, even with IPv6 off: the
+    // Core then has no IPv6 address and drops it, where left out it would leak.
+    if options.ipv6 || ipv4Routes.isEmpty {
       let ipv6 = NEIPv6Settings(addresses: [ipv6Address], networkPrefixLengths: [126])
-      let ipv6Routes = options.routeAddress.compactMap(ipv6Route)
+      let ipv6Routes = options.ipv6 ? options.routeAddress.compactMap(ipv6Route) : []
       ipv6.includedRoutes = ipv6Routes.isEmpty ? [.default()] : ipv6Routes
       settings.ipv6Settings = ipv6
     }
