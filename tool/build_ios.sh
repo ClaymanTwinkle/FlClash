@@ -72,6 +72,9 @@ locks_before=$(shasum -a 256 "${locks[@]}")
 flutter pub get --enforce-lockfile
 (cd plugins/rust_api/rust && cargo fetch --locked)
 
+echo "==> Core"
+ios/scripts/build_core.sh
+
 echo "==> build"
 printf '{"APP_ENV":"%s"}' "$env" >env.json
 flutter_args=(--release --dart-define-from-file=env.json)
