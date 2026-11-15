@@ -36,13 +36,18 @@ iOS lib mode:
   ones it keeps in the app and `config.setup`, `config.update` and `proxy.select`, which go to both so the app's Core is
   ready again once the tunnel stops.
 - Both Cores share the App Group container as their home; the database stays in Application Support, because iOS ends
-  a suspended app that holds a SQLite lock in a shared container. `syncState` writes `ios/shared-state.json` there,
+  a suspended app that holds a SQLite lock in a shared container. For the same reason each process points mihomo's
+  `cache.db`, which bbolt keeps locked while open, at its own container through `SetCacheFile` before the Core first
+  opens it. Only the tunnel's Core, marked by `MarkPacketTunnel`, serves the external controller: it is the one that
+  outlives the app, and two would contend for one port. `syncState` writes `ios/shared-state.json` there,
   and keeps the setup params in `ios/setup-params.json`: only the full sync `SetupAction` sends before each push on
   iOS carries them, the routine syncs leave them out.
 - The app pulls the tunnel's event batches through provider messages every 200 ms while Flutter is attached; the
   extension listens only while pulls keep coming, so a suspended app costs it no encoding.
 - `TunnelController` keeps the latest start/stop intent like `ServiceState`, adopts a tunnel that is already up, and
   sends `stopped` with the command revision when the run ends without a stop request.
+- A tunnel that takes all IPv4 also takes all IPv6, even with IPv6 off, so none of it leaves beside the tunnel; the Core
+  then has no IPv6 address and drops it.
 - mihomo's system stack only receives the tunnel's TCP when its listener is bound to the utun, which the fork does on
   iOS (`listener/sing_tun/server.go`).
 - GeoSite lists decode whole and stay cached, over 10 MB for `GEOSITE,cn`. On iOS the app's Core compiles each list a
