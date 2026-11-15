@@ -13,6 +13,10 @@ enum AppGroup {
 
   static var setupParamsFile: URL { stateDirectory.appendingPathComponent("setup-params.json") }
 
+  static var tunnelMemoryFile: URL { stateDirectory.appendingPathComponent("tunnel-memory.json") }
+
+  static var tunnelErrorFile: URL { stateDirectory.appendingPathComponent("tunnel-error.txt") }
+
   /// The Core's cache.db stays in this process's own container: bbolt keeps it
   /// locked, and a suspended app holding a lock in the App Group gets killed.
   static var processCacheFile: String {

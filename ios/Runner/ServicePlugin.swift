@@ -24,6 +24,9 @@ final class ServicePlugin: NSObject, FlutterPlugin {
     router = CoreRouter(tunnel: tunnel)
     super.init()
     tunnel.onStopped = { [weak self] in self?.notifyStopped() }
+    tunnel.onNotice = { [channel] code, message in
+      channel.invokeMethod("notice", arguments: ["code": code, "message": message])
+    }
     tunnel.onStatusChange = { [weak self] _ in self?.updatePulling() }
   }
 
@@ -103,6 +106,7 @@ final class ServicePlugin: NSObject, FlutterPlugin {
       return "Invalid shared state"
     }
     do {
+      tunnel.setExcludedNetworks(state["excludeSSIDs"] as? [String] ?? [])
       if let setupParams = state.removeValue(forKey: "setupParams") {
         try JSONSerialization.data(withJSONObject: setupParams).write(to: AppGroup.setupParamsFile, options: .atomic)
       }

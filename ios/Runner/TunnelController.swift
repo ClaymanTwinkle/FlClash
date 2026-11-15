@@ -9,9 +9,11 @@ final class TunnelController {
   /// The run ended without a stop request: a failed start, a revoke from
   /// Settings, another VPN taking over, or the extension dying.
   var onStopped: (() -> Void)?
+  var onNotice: ((_ code: String, _ message: String) -> Void)?
   var onStatusChange: ((NEVPNStatus) -> Void)?
 
   private(set) var isRunRequested = false
+  private var excludedNetworks: [String] = []
   private var runObserved = false
   private var manager: NETunnelProviderManager?
   private var generation = 0
@@ -54,7 +56,24 @@ final class TunnelController {
   func requestStop() {
     isRunRequested = false
     generation += 1
-    manager?.connection.stopVPNTunnel()
+    let current = generation
+    guard let manager else { return }
+    Task {
+      // An on-demand connect rule would bring the tunnel straight back.
+      if manager.isOnDemandEnabled {
+        manager.isOnDemandEnabled = false
+        try? await manager.saveToPreferences()
+      }
+      guard current == generation else { return }
+      manager.connection.stopVPNTunnel()
+    }
+  }
+
+  func setExcludedNetworks(_ networks: [String]) {
+    guard networks != excludedNetworks else { return }
+    excludedNetworks = networks
+    guard isRunRequested, let manager, applyOnDemandRules(manager) else { return }
+    Task { try? await manager.saveToPreferences() }
   }
 
   private func start(_ current: Int) async {
@@ -94,7 +113,7 @@ final class TunnelController {
   private func configuredManager() async throws -> NETunnelProviderManager {
     let manager = manager ?? NETunnelProviderManager()
     let proto = (manager.protocolConfiguration as? NETunnelProviderProtocol) ?? NETunnelProviderProtocol()
-    let needsSave = manager.protocolConfiguration == nil || !manager.isEnabled
+    var needsSave = manager.protocolConfiguration == nil || !manager.isEnabled
       || proto.providerBundleIdentifier != AppGroup.tunnelBundleIdentifier
     if needsSave {
       proto.providerBundleIdentifier = AppGroup.tunnelBundleIdentifier
@@ -102,6 +121,9 @@ final class TunnelController {
       manager.protocolConfiguration = proto
       manager.localizedDescription = "FlClash"
       manager.isEnabled = true
+    }
+    needsSave = applyOnDemandRules(manager) || needsSave
+    if needsSave {
       try await manager.saveToPreferences()
       try await manager.loadFromPreferences()
     }
@@ -116,15 +138,65 @@ final class TunnelController {
     case .connecting, .connected, .reasserting:
       runObserved = runObserved || isRunRequested
     case .disconnected where isRunRequested && runObserved:
-      giveBackRun()
+      Task { await runEnded() }
     default:
       break
     }
   }
 
+  /// Under on-demand rules a disconnect is the system's pause; only a failure that would repeat ends the run.
+  private func runEnded() async {
+    let reason = Self.stopReason()
+    if let manager {
+      try? await manager.loadFromPreferences()
+      if manager.isOnDemandEnabled {
+        guard reason != nil else { return }
+        manager.isOnDemandEnabled = false
+        try? await manager.saveToPreferences()
+      }
+    }
+    guard isRunRequested else { return }
+    giveBackRun()
+    if let (code, message) = reason {
+      onNotice?(code, message)
+    }
+  }
+
+  private func applyOnDemandRules(_ manager: NETunnelProviderManager) -> Bool {
+    let enabled = !excludedNetworks.isEmpty
+    let current = manager.onDemandRules?.compactMap { ($0 as? NEOnDemandRuleDisconnect)?.ssidMatch }.first ?? []
+    guard manager.isOnDemandEnabled != enabled || current != excludedNetworks else { return false }
+    if enabled {
+      let pause = NEOnDemandRuleDisconnect()
+      pause.interfaceTypeMatch = .wiFi
+      pause.ssidMatch = excludedNetworks
+      let connect = NEOnDemandRuleConnect()
+      connect.interfaceTypeMatch = .any
+      manager.onDemandRules = [pause, connect]
+    } else {
+      manager.onDemandRules = nil
+    }
+    manager.isOnDemandEnabled = enabled
+    return true
+  }
+
   private func giveBackRun() {
     isRunRequested = false
     onStopped?()
+  }
+
+  private static func stopReason() -> (String, String)? {
+    if let message = try? String(contentsOf: AppGroup.tunnelErrorFile, encoding: .utf8) {
+      try? FileManager.default.removeItem(at: AppGroup.tunnelErrorFile)
+      return ("tunnel_start_failed", message)
+    }
+    guard let data = try? Data(contentsOf: AppGroup.tunnelMemoryFile),
+          let sample = try? JSONSerialization.jsonObject(with: data) as? [String: NSNumber],
+          let footprint = sample["footprint"]?.uint64Value, let available = sample["available"]?.uint64Value,
+          let at = sample["at"]?.doubleValue, Date().timeIntervalSince1970 - at < 10
+    else { return nil }
+    // Less than a tenth of the limit left a second before it went: iOS ended it for memory.
+    return available * 10 < footprint + available ? ("tunnel_memory", "") : nil
   }
 }
 

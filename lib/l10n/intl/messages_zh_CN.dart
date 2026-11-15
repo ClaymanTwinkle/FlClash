@@ -234,13 +234,15 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m97(transport) => "${transport} 请求头";
 
-  static String m98(label) => "${label}必须为URL";
+  static String m98(message) => "VPN 启动失败：${message}";
 
-  static String m99(date) => "有效期至 ${date}";
+  static String m99(label) => "${label}必须为URL";
 
-  static String m100(count) => "${count} 年前";
+  static String m100(date) => "有效期至 ${date}";
 
   static String m101(count) => "${count} 年前";
+
+  static String m102(count) => "${count} 年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1613,6 +1615,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "添加的项会覆写所有配置的虚拟网卡设置，未添加的项沿用配置自身的设置。自定义配置自己添加的项优先。",
     ),
+    "tunnelMemoryExceeded": MessageLookupByLibrary.simpleMessage(
+      "VPN 已被系统停止：当前配置需要的内存超过了 iOS 给 VPN 的上限（约 50 MB），请减少节点或规则后重试。",
+    ),
+    "tunnelStartFailed": m98,
     "turnOff": MessageLookupByLibrary.simpleMessage("关闭"),
     "turnOn": MessageLookupByLibrary.simpleMessage("开启"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP 中继模式"),
@@ -1648,14 +1654,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("上行带宽"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 重写"),
-    "urlTip": m98,
+    "urlTip": m99,
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统Hosts"),
     "usedShort": MessageLookupByLibrary.simpleMessage("已用"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("已用流量"),
     "userAgent": MessageLookupByLibrary.simpleMessage("用户代理"),
     "username": MessageLookupByLibrary.simpleMessage("用户名"),
-    "validUntil": m99,
+    "validUntil": m100,
     "value": MessageLookupByLibrary.simpleMessage("值"),
     "view": MessageLookupByLibrary.simpleMessage("查看"),
     "viewAll": MessageLookupByLibrary.simpleMessage("查看全部"),
@@ -1670,8 +1676,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "写入系统会同时设置系统时钟，Android 上不生效。",
     ),
-    "yearsAgo": m100,
-    "yearsAgoShort": m101,
+    "yearsAgo": m101,
+    "yearsAgoShort": m102,
     "yes": MessageLookupByLibrary.simpleMessage("是"),
     "zhCN": MessageLookupByLibrary.simpleMessage("中文简体"),
   };

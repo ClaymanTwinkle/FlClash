@@ -7673,8 +7673,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',
@@ -9080,6 +9079,26 @@ class AppLocalizations {
       name: 'fallbackFilterDomainDesc',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `The VPN was stopped: this profile needs more memory than iOS allows a VPN (about 50 MB). Remove some proxies or rules and try again.`
+  String get tunnelMemoryExceeded {
+    return Intl.message(
+      'The VPN was stopped: this profile needs more memory than iOS allows a VPN (about 50 MB). Remove some proxies or rules and try again.',
+      name: 'tunnelMemoryExceeded',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The VPN could not start: {message}`
+  String tunnelStartFailed(Object message) {
+    return Intl.message(
+      'The VPN could not start: $message',
+      name: 'tunnelStartFailed',
+      desc: '',
+      args: [message],
     );
   }
 }

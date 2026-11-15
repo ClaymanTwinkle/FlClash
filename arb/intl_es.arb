@@ -1077,5 +1077,7 @@
   "fakeipFilterDesc": "Estos dominios reciben su IP real en lugar de una Fake-IP. En modo whitelist, solo ellos reciben Fake-IP.",
   "fallbackFilterGeositeDesc": "Los dominios de estas categorías GeoSite se resuelven directamente con Fallback.",
   "fallbackFilterIpcidrDesc": "Si Nameserver devuelve una IP de estos rangos, se usa la respuesta de Fallback.",
-  "fallbackFilterDomainDesc": "Estos dominios se resuelven directamente con Fallback."
+  "fallbackFilterDomainDesc": "Estos dominios se resuelven directamente con Fallback.",
+  "tunnelMemoryExceeded": "El sistema detuvo la VPN: este perfil necesita más memoria de la que iOS permite a una VPN (unos 50 MB). Quita algunos proxies o reglas e inténtalo de nuevo.",
+  "tunnelStartFailed": "No se pudo iniciar la VPN: {message}"
 }

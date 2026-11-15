@@ -9,6 +9,7 @@ import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prism_ui/banner.dart';
 
 class AndroidManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -76,6 +77,19 @@ class _AndroidContainerState extends ConsumerState<AndroidManager>
   void onServiceEvent(CoreEvent event) {
     coreEventManager.sendEvent(event);
     super.onServiceEvent(event);
+  }
+
+  @override
+  void onServiceNotice(String code, String message) {
+    final text = switch (code) {
+      'tunnel_memory' => currentAppLocalizations.tunnelMemoryExceeded,
+      'tunnel_start_failed' => currentAppLocalizations.tunnelStartFailed(
+        message,
+      ),
+      _ => '',
+    };
+    dialogs.showBanner(text, level: BannerLevel.error);
+    super.onServiceNotice(code, message);
   }
 
   @override

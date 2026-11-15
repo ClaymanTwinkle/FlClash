@@ -227,6 +227,7 @@ SharedState sharedState(Ref ref) {
       options: ref.watch(coreOptionsProvider),
     ),
     vpnOptions: ref.watch(vpnOptionsProvider).value,
+    excludeSSIDs: ref.watch(excludeSSIDsProvider),
   );
 }
 

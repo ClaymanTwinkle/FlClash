@@ -43,9 +43,19 @@ iOS lib mode:
   and keeps the setup params in `ios/setup-params.json`: only the full sync `SetupAction` sends before each push on
   iOS carries them, the routine syncs leave them out.
 - The app pulls the tunnel's event batches through provider messages every 200 ms while Flutter is attached; the
-  extension listens only while pulls keep coming, so a suspended app costs it no encoding.
+  extension listens only while pulls keep coming, so a suspended app costs it no encoding. What it drops meanwhile is
+  read back on resume: `AppManager` resyncs providers and groups while a run is up.
 - `TunnelController` keeps the latest start/stop intent like `ServiceState`, adopts a tunnel that is already up, and
-  sends `stopped` with the command revision when the run ends without a stop request.
+  sends `stopped` with the command revision when the run ends without a stop request. The extension leaves its start
+  error and a per-second memory sample in the App Group, and a run that ends on either sends `notice`
+  (`tunnel_start_failed`, `tunnel_memory`), which `AndroidManager` shows as a banner.
+- Android's on-demand suspension becomes iOS on-demand rules: `SharedState.excludeSSIDs` turns into a disconnect rule
+  for those Wi-Fi networks and a connect rule for the rest, so the system pauses and resumes the tunnel with the app
+  away. A disconnect under those rules keeps the run requested; a start error or memory death turns them off and ends
+  the run, since a restart would only repeat it. A user stop, in the app or from Settings, turns them off first.
+- The extension follows the default network with `NWPathMonitor`, reads that interface's resolvers through
+  `dns_configuration_copy` (the tunnel's own replace the system's once it is up), and calls `UpdateDns` and
+  `ResetNetwork` as Android's `NetworkObserver` does.
 - A tunnel that takes all IPv4 also takes all IPv6, even with IPv6 off, so none of it leaves beside the tunnel; the Core
   then has no IPv6 address and drops it.
 - mihomo's system stack only receives the tunnel's TCP when its listener is bound to the utun, which the fork does on

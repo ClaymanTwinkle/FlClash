@@ -266,14 +266,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m97(transport) => "${transport} Headers";
 
-  static String m98(label) => "${label} must be a URL";
+  static String m98(message) => "The VPN could not start: ${message}";
 
-  static String m99(date) => "Valid until ${date}";
+  static String m99(label) => "${label} must be a URL";
 
-  static String m100(count) =>
+  static String m100(date) => "Valid until ${date}";
+
+  static String m101(count) =>
       "${Intl.plural(count, one: '1 year ago', other: '${count} years ago')}";
 
-  static String m101(count) => "${Intl.plural(count, other: '${count}y ago')}";
+  static String m102(count) => "${Intl.plural(count, other: '${count}y ago')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1048,9 +1050,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificate installed",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "The app list permission was denied, so installed apps cannot be listed. Please grant it manually in system settings.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "The app list permission was denied, so installed apps cannot be listed. Please grant it manually in system settings.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "This system hides the installed app list until the permission is granted. Authorize it to configure the per-app proxy.",
     ),
@@ -2083,6 +2086,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "Entries added here replace the TUN settings of every profile; anything not added keeps the profile\'s own setting. Entries a custom profile adds itself take precedence.",
     ),
+    "tunnelMemoryExceeded": MessageLookupByLibrary.simpleMessage(
+      "The VPN was stopped: this profile needs more memory than iOS allows a VPN (about 50 MB). Remove some proxies or rules and try again.",
+    ),
+    "tunnelStartFailed": m98,
     "turnOff": MessageLookupByLibrary.simpleMessage("Turn off"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Turn on"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP relay mode"),
@@ -2128,14 +2135,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("Upload bandwidth"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL rewrite"),
-    "urlTip": m98,
+    "urlTip": m99,
     "useHosts": MessageLookupByLibrary.simpleMessage("Use hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("Use system hosts"),
     "usedShort": MessageLookupByLibrary.simpleMessage("used"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("Used traffic"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("Username"),
-    "validUntil": m99,
+    "validUntil": m100,
     "value": MessageLookupByLibrary.simpleMessage("Value"),
     "view": MessageLookupByLibrary.simpleMessage("View"),
     "viewAll": MessageLookupByLibrary.simpleMessage("View all"),
@@ -2152,8 +2159,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Write to system also sets the system clock; Android ignores it.",
     ),
-    "yearsAgo": m100,
-    "yearsAgoShort": m101,
+    "yearsAgo": m101,
+    "yearsAgoShort": m102,
     "yes": MessageLookupByLibrary.simpleMessage("Yes"),
     "zhCN": MessageLookupByLibrary.simpleMessage("Simplified Chinese"),
   };

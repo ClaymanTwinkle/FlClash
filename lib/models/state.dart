@@ -171,6 +171,9 @@ abstract class SharedState with _$SharedState {
     required String stopText,
     required bool onlyStatisticsProxy,
     @Default(true) bool showStopAction,
+    // iOS turns these into on-demand rules, so the system pauses the tunnel
+    // on these networks even while the app is not running.
+    @Default([]) List<String> excludeSSIDs,
   }) = _SharedState;
 
   factory SharedState.fromJson(Map<String, Object?> json) =>

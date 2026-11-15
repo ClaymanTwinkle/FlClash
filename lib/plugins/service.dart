@@ -34,6 +34,9 @@ abstract mixin class ServiceListener {
   void onServiceEvent(CoreEvent event) {}
 
   void onServiceStopped() {}
+
+  /// iOS only: why the packet tunnel ended a run on its own.
+  void onServiceNotice(String code, String message) {}
 }
 
 class Service {
@@ -68,6 +71,15 @@ class Service {
               (listener) => listener.onServiceEvent(event),
             );
           }
+          break;
+        case 'notice':
+          final notice = Map<String, Object?>.from(call.arguments as Map);
+          final code = notice['code'] as String? ?? '';
+          final message = notice['message'] as String? ?? '';
+          _dispatch(
+            'notice $code',
+            (listener) => listener.onServiceNotice(code, message),
+          );
           break;
         case 'stopped':
           // A report stamped before the newest command no longer describes it.

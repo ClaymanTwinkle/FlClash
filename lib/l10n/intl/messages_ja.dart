@@ -238,13 +238,15 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m97(transport) => "${transport} リクエストヘッダー";
 
-  static String m98(label) => "${label}はURLである必要があります";
+  static String m98(message) => "VPN を開始できませんでした：${message}";
 
-  static String m99(date) => "有効期限 ${date}";
+  static String m99(label) => "${label}はURLである必要があります";
 
-  static String m100(count) => "${count} 年前";
+  static String m100(date) => "有効期限 ${date}";
 
   static String m101(count) => "${count} 年前";
+
+  static String m102(count) => "${count} 年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1783,6 +1785,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "ここで追加した項目は、すべてのプロファイルの TUN 設定を上書きします。追加していない項目はプロファイル自身の設定のままです。カスタムプロファイル自身が追加した項目が優先されます。",
     ),
+    "tunnelMemoryExceeded": MessageLookupByLibrary.simpleMessage(
+      "VPN はシステムによって停止されました。このプロファイルは iOS が VPN に許可するメモリ（約 50 MB）を超えています。プロキシやルールを減らしてから再試行してください。",
+    ),
+    "tunnelStartFailed": m98,
     "turnOff": MessageLookupByLibrary.simpleMessage("オフにする"),
     "turnOn": MessageLookupByLibrary.simpleMessage("オンにする"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP リレーモード"),
@@ -1826,14 +1832,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("アップロード帯域幅"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 書き換え"),
-    "urlTip": m98,
+    "urlTip": m99,
     "useHosts": MessageLookupByLibrary.simpleMessage("Hostsを使用"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("システムのHostsを使用"),
     "usedShort": MessageLookupByLibrary.simpleMessage("使用済み"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("使用済みトラフィック"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("ユーザー名"),
-    "validUntil": m99,
+    "validUntil": m100,
     "value": MessageLookupByLibrary.simpleMessage("値"),
     "view": MessageLookupByLibrary.simpleMessage("表示"),
     "viewAll": MessageLookupByLibrary.simpleMessage("すべて表示"),
@@ -1848,8 +1854,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "システムに書き込むを有効にするとシステムクロックも設定します。Android では無視されます。",
     ),
-    "yearsAgo": m100,
-    "yearsAgoShort": m101,
+    "yearsAgo": m101,
+    "yearsAgoShort": m102,
     "yes": MessageLookupByLibrary.simpleMessage("はい"),
     "zhCN": MessageLookupByLibrary.simpleMessage("簡体字中国語"),
   };

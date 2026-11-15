@@ -1077,5 +1077,7 @@
   "fakeipFilterDesc": "이 도메인에는 Fake-IP 대신 실제 IP를 반환합니다. whitelist 모드에서는 이 도메인만 Fake-IP를 사용합니다.",
   "fallbackFilterGeositeDesc": "이 GeoSite 분류의 도메인은 바로 Fallback으로 확인합니다.",
   "fallbackFilterIpcidrDesc": "Nameserver가 이 범위의 IP를 반환하면 Fallback 결과를 사용합니다.",
-  "fallbackFilterDomainDesc": "이 도메인은 바로 Fallback으로 확인합니다."
+  "fallbackFilterDomainDesc": "이 도메인은 바로 Fallback으로 확인합니다.",
+  "tunnelMemoryExceeded": "시스템이 VPN을 중지했습니다. 이 프로필은 iOS가 VPN에 허용하는 메모리(약 50MB)보다 많은 메모리가 필요합니다. 프록시나 규칙을 줄인 뒤 다시 시도하세요.",
+  "tunnelStartFailed": "VPN을 시작할 수 없습니다: {message}"
 }
