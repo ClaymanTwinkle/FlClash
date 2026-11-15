@@ -11,7 +11,9 @@
 #   - dependency lock files unchanged by the build
 # and finally reports which certificate signed each APK.
 #
-# Usage: tool/build_android.sh [--arch arm64|arm|amd64] [--env stable|pre]
+# Usage: tool/build_android.sh [--arch arm64|arm|amd64] [--env stable|pre] [--build-number N]
+#   --build-number overrides the versionCode base from pubspec.yaml, so a newer
+#   build can update an installed one.
 # Needs: flutter, go, rustup/cargo and ANDROID_NDK_HOME (NDK 28.2.13676358) on PATH/env.
 set -euo pipefail
 
@@ -20,15 +22,21 @@ cd "$root"
 
 arch=""
 env=stable
+build_number=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --arch) arch=$2; shift 2 ;;
     --env) env=$2; shift 2 ;;
+    --build-number) build_number=$2; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
 fail() { echo "error: $*" >&2; exit 1; }
+
+if [ -n "$build_number" ] && ! [[ "$build_number" =~ ^[0-9]+$ ]]; then
+  fail "--build-number must be a number"
+fi
 
 # Same bundle and digest as the CA step in .github/workflows/build.yaml.
 ca_bundle=cacert-2026-09-25.pem
@@ -73,6 +81,9 @@ case "$arch" in
   amd64) target=(--target-platform android-x64) ;;
   *) fail "unknown arch: $arch" ;;
 esac
+if [ -n "$build_number" ]; then
+  target+=(--build-number "$build_number")
+fi
 flutter build apk --release --split-per-abi --dart-define-from-file=env.json ${target[@]+"${target[@]}"}
 
 echo "==> lock files"
