@@ -109,7 +109,19 @@ func loadConfig(path string) (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := executor.ParseWithBytes(buf)
+	if geositeMode == geositeKeep {
+		cfg, err := executor.ParseWithBytes(buf)
+		if err != nil {
+			return nil, err
+		}
+		return withPlatformLimits(cfg), nil
+	}
+	raw, err := unmarshalRawConfig(buf)
+	if err != nil {
+		return nil, err
+	}
+	prepareGeosite(raw)
+	cfg, err := config.ParseRawConfig(raw)
 	if err != nil {
 		return nil, err
 	}
