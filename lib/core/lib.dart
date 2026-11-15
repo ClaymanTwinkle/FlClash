@@ -113,10 +113,14 @@ class CoreLib extends CoreHandlerInterface {
   }
 
   // The service opens and closes the Core's listeners itself and reports a run
-  // that ends, so once it takes the command the Core's own answer is moot.
+  // that ends, so once it takes the command the Core's own answer is moot. On
+  // iOS the listeners belong to the packet tunnel's Core, and the app's own
+  // Core opening the mixed port would take it from the extension.
   @override
   Future<void> startListener() async {
-    await _ignoreUnanswered(super.startListener);
+    if (!system.isIOS) {
+      await _ignoreUnanswered(super.startListener);
+    }
     if (!await _service!.start()) {
       throw const CoreMethodException(
         code: 'service_refused',
@@ -128,7 +132,9 @@ class CoreLib extends CoreHandlerInterface {
   @override
   Future<void> stopListener() async {
     final serviceStopped = await _service!.stop();
-    await _ignoreUnanswered(super.stopListener);
+    if (!system.isIOS) {
+      await _ignoreUnanswered(super.stopListener);
+    }
     if (!serviceStopped) {
       throw const CoreMethodException(
         code: 'service_refused',
@@ -180,4 +186,4 @@ class CoreLib extends CoreHandlerInterface {
   }
 }
 
-CoreLib? get coreLib => system.isAndroid ? CoreLib() : null;
+CoreLib? get coreLib => system.isMobile ? CoreLib() : null;

@@ -23,6 +23,35 @@ Android lib mode:
   initializes and synchronizes Android shared state, and closes the native service path exactly once.
 - Because Core is in the application process on Android, application RSS already includes Core memory.
 
+iOS lib mode:
+
+- The same `core/mobile` API, built by gomobile into `libclash/ios/ClashCore.xcframework`, runs twice. The app's Core
+  answers everything while the tunnel is down and whatever needs no running state; the packet tunnel extension
+  (`ios/PacketTunnel`) starts its own from `QuickSetup` and `StartTun` with the utun descriptor, as Android's
+  `VpnService` does. iOS kills that extension at about 50 MB, so it sets a 30 MB Go memory limit and collects on memory
+  pressure.
+- `ios/Runner/ServicePlugin.swift` serves the same `${packageName}/service` and `${packageName}/core` channels as
+  Android, and `CoreLib` and `Service` run unchanged except that iOS never opens the app Core's listeners: the mixed
+  port belongs to the tunnel. `CoreRouter` sends a call to the tunnel's Core while the tunnel runs, except the stateless
+  ones it keeps in the app and `config.setup`, `config.update` and `proxy.select`, which go to both so the app's Core is
+  ready again once the tunnel stops.
+- Both Cores share the App Group container as their home; the database stays in Application Support, because iOS ends
+  a suspended app that holds a SQLite lock in a shared container. `syncState` writes `ios/shared-state.json` there,
+  and keeps the setup params in `ios/setup-params.json`: only the full sync `SetupAction` sends before each push on
+  iOS carries them, the routine syncs leave them out.
+- The app pulls the tunnel's event batches through provider messages every 200 ms while Flutter is attached; the
+  extension listens only while pulls keep coming, so a suspended app costs it no encoding.
+- `TunnelController` keeps the latest start/stop intent like `ServiceState`, adopts a tunnel that is already up, and
+  sends `stopped` with the command revision when the run ends without a stop request.
+- mihomo's system stack only receives the tunnel's TCP when its listener is bound to the utun, which the fork does on
+  iOS (`listener/sing_tun/server.go`).
+- GeoSite lists decode whole and stay cached, over 10 MB for `GEOSITE,cn`. On iOS the app's Core compiles each list a
+  config names into `<home>/geosite/<code>.mrs` (keyword and regex entries into `<code>-extra.list`), and the tunnel's
+  Core, marked by `MarkPacketTunnel`, rewrites rules, sub-rules, `nameserver-policy` and `fake-ip-filter` to those
+  rule-sets (`core/geosite_ruleset.go`). A manifest older than `GeoSite.dat` leaves the GEOSITE references alone.
+- Signing needs the App Group to exist in the developer account already: an App Store Connect API key can register the
+  App IDs and capabilities but cannot create an App Group.
+
 Desktop core mode:
 
 - Go core runs as a separate process with `CGO_ENABLED=0`.

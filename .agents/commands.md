@@ -35,6 +35,22 @@ Flutter hides the hook's output on success, so to see why the Core was or was
 not rebuilt read `.dart_tool/setup_build_cache/hook.log`; each invocation starts
 with a `===` line carrying its timestamp and target.
 
+iOS builds through `tool/build_ios.sh`, not `setup.dart`, from the same pinned
+inputs as `tool/build_android.sh`. `--unsigned` packs
+`dist/FlClash-ios-arm64-unsigned.ipa`; `--install <device>` signs and installs,
+through an App Store Connect API key when `ASC_KEY_PATH`, `ASC_KEY_ID` and
+`ASC_ISSUER_ID` are set. The Core is `libclash/ios/ClashCore.xcframework`, which
+`ios/scripts/build_core.sh` builds with gomobile as the PacketTunnel target's
+first build phase, again only when a Go input is newer than
+`libclash/ios/ClashCore.stamp`. Flutter's build hooks run `xcrun` without
+`DEVELOPER_DIR`, so `xcode-select -p` must name Xcode, not the Command Line
+Tools, or `objective_c`'s hook finds no iOS SDK.
+
+```bash
+tool/build_ios.sh --install <device-udid>
+tool/build_ios.sh --unsigned
+```
+
 The hook runs for `flutter test` and for `dart run` of any root-package script
 too, so a pure Dart test run needs the Go toolchain, and on Linux and Windows
 also `cargo` and `rustc` — the Helper fingerprint shells out to both even on a

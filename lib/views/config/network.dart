@@ -480,17 +480,19 @@ class VpnSections extends ConsumerWidget {
     final authenticationEnable = ref.watch(
       networkSettingProvider.select((state) => state.authentication.enable),
     );
+    // An iOS packet tunnel is the only way to run, and it cannot let apps
+    // bypass it, so neither switch applies there.
     return Column(
       children: [
-        generateSection(items: const [VPNItem()]),
+        if (!system.isIOS) generateSection(items: const [VPNItem()]),
         generateSection(
           title: 'VPN',
-          items: const [
-            VpnSystemProxyItem(),
-            BypassDomainItem(),
-            AllowBypassItem(),
-            Ipv6Item(),
-            DNSHijackingItem(),
+          items: [
+            const VpnSystemProxyItem(),
+            const BypassDomainItem(),
+            if (!system.isIOS) const AllowBypassItem(),
+            const Ipv6Item(),
+            const DNSHijackingItem(),
           ],
           footer: [
             if (authenticationEnable)
@@ -554,7 +556,7 @@ class NetworkListView extends StatelessWidget {
         bottom: 16 + context.bottomInset,
       ),
       children: [
-        if (system.isAndroid) const VpnSections(),
+        if (system.isMobile) const VpnSections(),
         if (system.isDesktop) const SystemProxySection(),
         const NetworkOptionsSection(),
         TunSection(

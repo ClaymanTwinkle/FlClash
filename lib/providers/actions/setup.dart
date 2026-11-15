@@ -772,10 +772,17 @@ class SetupAction extends _$SetupAction {
     _appliedInputs = null;
     globalState.lastConfigMd5 = null;
     globalState.lastConfigCounts = null;
-    if (system.isAndroid) {
+    if (system.isMobile) {
       await ref.read(vpnOptionsProvider.future);
+    }
+    if (system.isAndroid) {
       await preferences.saveShareState(ref.read(sharedStateProvider));
       await preferences.saveAppliedConfigMd5(null);
+    }
+    // The packet tunnel starts from what the app last handed over, setup
+    // params included, which the routine syncs leave out.
+    if (system.isIOS) {
+      await service?.syncState(ref.read(sharedStateProvider));
     }
     // Recaptured so _start's catch can roll back after safeRun swallows it.
     (Object, StackTrace)? handoffFailure;

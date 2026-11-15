@@ -5,10 +5,12 @@ import 'package:fl_clash/common/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path_provider_foundation/path_provider_foundation.dart';
 
 class AppPath {
   static AppPath? _instance;
   late ResolveOnce<Directory> _dataDir;
+  late ResolveOnce<Directory> _homeDir;
   late ResolveOnce<Directory?> _downloadDir;
   late ResolveOnce<Directory> _tempDir;
   Completer<Directory> cacheDir = Completer();
@@ -29,6 +31,22 @@ class AppPath {
   static Future<Directory?> Function() downloadDirectory =
       getDownloadsDirectory;
 
+  /// The packet tunnel extension reads the Core's home, so on iOS it lives in
+  /// the App Group container both processes can open.
+  @visibleForTesting
+  static Future<Directory> Function() homeDirectory = () async {
+    if (!Platform.isIOS) {
+      return supportDirectory();
+    }
+    final path = await PathProviderFoundation().getContainerPath(
+      appGroupIdentifier: iosAppGroup,
+    );
+    if (path == null) {
+      throw StateError('App Group $iosAppGroup is not available');
+    }
+    return Directory(path);
+  };
+
   AppPath._internal() {
     _bind();
   }
@@ -37,11 +55,17 @@ class AppPath {
   Future<void> rebind() async {
     cacheDir = Completer();
     _bind();
-    await Future.wait([_dataDir.value, _downloadDir.value, _tempDir.value]);
+    await Future.wait([
+      _dataDir.value,
+      _homeDir.value,
+      _downloadDir.value,
+      _tempDir.value,
+    ]);
   }
 
   void _bind() {
     _dataDir = ResolveOnce(supportDirectory);
+    _homeDir = ResolveOnce(homeDirectory);
     _downloadDir = ResolveOnce(downloadDirectory);
     _tempDir = ResolveOnce(temporaryDirectory);
     cacheDirectory().then(cacheDir.complete);
@@ -75,13 +99,15 @@ class AppPath {
   }
 
   Future<String> get homeDirPath async {
-    final directory = await _dataDir.value;
+    final directory = await _homeDir.value;
     return directory.path;
   }
 
+  /// Kept out of the iOS App Group: iOS ends a suspended app that still holds
+  /// a SQLite lock on a file in a shared container.
   Future<String> get databasePath async {
-    final mHomeDirPath = await homeDirPath;
-    return join(mHomeDirPath, 'database.sqlite');
+    final directory = await _dataDir.value;
+    return join(directory.path, 'database.sqlite');
   }
 
   Future<String> get tempFilePath async {
