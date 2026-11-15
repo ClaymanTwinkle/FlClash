@@ -94,6 +94,12 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       if (mitmFeature && ref.read(patchClashConfigProvider).mitm.enable) {
         unawaited(ref.read(mitmTrustStateProvider.notifier).refresh());
       }
+      // The packet tunnel drops events while iOS suspends the app, so what a
+      // provider update or a group change reported meanwhile is read back.
+      if (system.isIOS && ref.read(isStartProvider)) {
+        unawaited(ref.read(providersProvider.notifier).syncProviders());
+        ref.read(proxiesActionProvider.notifier).updateGroupsDebounce();
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
