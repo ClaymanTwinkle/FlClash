@@ -19,8 +19,13 @@ void main(List<String> args) async {
 // rquickjs runs bindgen on Android, which must load the NDK's libclang; Linux
 // NDKs before r26 keep it under lib64, later ones and every macOS NDK under lib.
 Map<String, String> _bindgenEnvironment(BuildInput input) {
-  if (!input.config.buildCodeAssets ||
-      input.config.code.targetOS != OS.android) {
+  if (!input.config.buildCodeAssets) {
+    return const {};
+  }
+  if (input.config.code.targetOS == OS.iOS) {
+    return _iOSBindgenEnvironment(input.config.code);
+  }
+  if (input.config.code.targetOS != OS.android) {
     return const {};
   }
   final compiler = input.config.code.cCompiler?.compiler;
@@ -40,6 +45,27 @@ Map<String, String> _bindgenEnvironment(BuildInput input) {
     'No libclang under ${llvmRoot.path} (lib or lib64); the NDK Flutter '
     'passed cannot run bindgen for rquickjs',
   );
+}
+
+// On iOS bindgen loads Xcode's own libclang and parses against the target SDK.
+Map<String, String> _iOSBindgenEnvironment(CodeConfig code) {
+  final sdk = code.iOS.targetSdk == IOSSdk.iPhoneOS
+      ? 'iphoneos'
+      : 'iphonesimulator';
+  String xcrun(List<String> args) {
+    final result = Process.runSync('xcrun', ['--sdk', sdk, ...args]);
+    if (result.exitCode != 0) {
+      throw ProcessException('xcrun', args, '${result.stderr}', result.exitCode);
+    }
+    return (result.stdout as String).trim();
+  }
+
+  final clang = File(xcrun(['--find', 'clang']));
+  return {
+    'LIBCLANG_PATH': '${clang.parent.parent.path}/lib',
+    'BINDGEN_EXTRA_CLANG_ARGS': '-isysroot "${xcrun(['--show-sdk-path'])}"',
+    'IPHONEOS_DEPLOYMENT_TARGET': '${code.iOS.targetVersion}.0',
+  };
 }
 
 bool _isLibclang(FileSystemEntity entity) {
