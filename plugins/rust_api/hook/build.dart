@@ -55,7 +55,12 @@ Map<String, String> _iOSBindgenEnvironment(CodeConfig code) {
   String xcrun(List<String> args) {
     final result = Process.runSync('xcrun', ['--sdk', sdk, ...args]);
     if (result.exitCode != 0) {
-      throw ProcessException('xcrun', args, '${result.stderr}', result.exitCode);
+      throw ProcessException(
+        'xcrun',
+        args,
+        '${result.stderr}',
+        result.exitCode,
+      );
     }
     return (result.stdout as String).trim();
   }
