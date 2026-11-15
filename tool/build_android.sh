@@ -9,6 +9,7 @@
 #   - SQLite source (third_party/sqlite) and geodata (assets/data) at their recorded SHA-256
 #   - the CA bundle CI ships, from curl.se, checked against its SHA-256
 #   - dependency lock files unchanged by the build
+# and finally reports which certificate signed each APK.
 #
 # Usage: tool/build_android.sh [--arch arm64|arm|amd64] [--env stable|pre]
 # Needs: flutter, go, rustup/cargo and ANDROID_NDK_HOME (NDK 28.2.13676358) on PATH/env.
@@ -78,7 +79,18 @@ echo "==> lock files"
 git diff --exit-code -- "${locks[@]}" || fail "the build changed a lock file"
 
 echo "==> APKs"
+# Release signing needs android/app/keystore.jks plus storePassword, keyAlias and
+# keyPassword in android/local.properties (both git-ignored). Without them Gradle
+# falls back to the debug key and the .dev package name, so say which one was used.
+apksigner=$(ls -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}"/build-tools/*/apksigner 2>/dev/null |
+  sort -V | tail -n 1 || true)
 for apk in build/app/outputs/flutter-apk/*-release.apk; do
   [ -e "$apk" ] || continue
   shasum -a 256 "$apk"
+  if [ -n "$apksigner" ]; then
+    "$apksigner" verify --print-certs "$apk" | grep -E 'Signer #1 certificate (DN|SHA-256)'
+    if "$apksigner" verify --print-certs "$apk" | grep -q 'CN=Android Debug'; then
+      echo "warning: signed with the debug key (package com.follow.clash.dev)" >&2
+    fi
+  fi
 done
