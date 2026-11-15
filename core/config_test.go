@@ -768,6 +768,33 @@ func TestLoadConfigKeepsTheSystemTimeWriteOnlyWhereItIsAllowed(t *testing.T) {
 	}
 }
 
+func TestLoadConfigServesTheControllerOnlyWhereItIsAllowed(t *testing.T) {
+	previous := serveController
+	t.Cleanup(func() { serveController = previous })
+
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	profile := "external-controller: 127.0.0.1:9090\nexternal-controller-unix: mihomo.sock\n"
+	if err := os.WriteFile(path, []byte(profile), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	for _, serve := range []bool{true, false} {
+		serveController = serve
+
+		cfg, err := loadConfig(path)
+
+		if err != nil {
+			t.Fatalf("loadConfig = %v", err)
+		}
+		served := cfg.Controller.ExternalController != "" && cfg.Controller.ExternalControllerUnix != ""
+		cleared := cfg.Controller.ExternalController == "" && cfg.Controller.ExternalControllerUnix == ""
+		if serve && !served || !serve && !cleared {
+			t.Errorf("serve %t: controller = %q, unix = %q", serve,
+				cfg.Controller.ExternalController, cfg.Controller.ExternalControllerUnix)
+		}
+	}
+}
+
 func withSetupConfig(t *testing.T, apply func(*SetupParams) error) {
 	t.Helper()
 	previous := setupConfig
