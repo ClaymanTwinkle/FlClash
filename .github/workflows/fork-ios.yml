@@ -1,0 +1,77 @@
+name: fork-ios
+
+# Publishes an unsigned IPA to the rolling `ios-latest` pre-release; a sideloading
+# tool re-signs it with an Apple ID allowed App Groups and Network Extensions.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: fork-ios
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.47.6'
+  GO_VERSION: '1.27.1'
+  RELEASE_TAG: ios-latest
+  ASSET: FlClash-ios-arm64-unsigned.ipa
+
+jobs:
+  ipa:
+    if: github.repository == 'ClaymanTwinkle/FlClash'
+    runs-on: macos-26
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Build
+        run: |
+          build_number="$(date -u +%Y%m%d)$(printf '%02d' $((GITHUB_RUN_NUMBER % 100)))"
+          echo "build number $build_number"
+          tool/build_ios.sh --unsigned --build-number "$build_number"
+          cp "dist/$ASSET" "$ASSET"
+          shasum -a 256 "$ASSET" > "$ASSET.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ env.ASSET }}
+          path: |
+            ${{ env.ASSET }}
+            ${{ env.ASSET }}.sha256
+
+      - name: Publish to the ios-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Unsigned build from ${GITHUB_SHA} (run ${GITHUB_RUN_NUMBER}).
+          SHA-256: $(cut -d' ' -f1 "$ASSET.sha256")"
+          git tag -f "$RELEASE_TAG" "$GITHUB_SHA"
+          git push -f origin "refs/tags/$RELEASE_TAG"
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --notes "$notes"
+          else
+            gh release create "$RELEASE_TAG" --prerelease --title "iOS (latest main)" --notes "$notes"
+          fi
+          gh release upload "$RELEASE_TAG" "$ASSET" "$ASSET.sha256" --clobber
