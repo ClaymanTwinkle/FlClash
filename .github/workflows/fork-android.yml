@@ -108,6 +108,7 @@ jobs:
           fi
           cp "$apk" "$ASSET"
           sha256sum "$ASSET" > "$ASSET.sha256"
+          cp "$ASSET.sha256" SHA256SUMS
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -121,14 +122,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The in-app updater (lib/common/request.dart) compares this title,
+          # v<versionName>+<versionCode>, with the installed build, so it is
+          # written only after the assets it describes are in place.
+          aapt2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n 1)
+          badging=$("$aapt2" dump badging "$ASSET" | head -n 1)
+          version_name=$(sed -nE "s/.*versionName='([^']+)'.*/\1/p" <<<"$badging")
+          version_code=$(sed -nE "s/.*versionCode='([0-9]+)'.*/\1/p" <<<"$badging")
+          if [ -z "$version_name" ] || [ -z "$version_code" ]; then
+            echo "::error::no version in: $badging" && exit 1
+          fi
+          title="v$version_name+$version_code"
           notes="Built from ${GITHUB_SHA} (run ${GITHUB_RUN_NUMBER}).
           SHA-256: $(cut -d' ' -f1 "$ASSET.sha256")"
           git tag -f "$RELEASE_TAG" "$GITHUB_SHA"
           git push -f origin "refs/tags/$RELEASE_TAG"
-          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --notes "$notes"
-          else
+          if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --prerelease \
-              --title "Android (latest main)" --notes "$notes"
+              --title "$title" --notes "$notes"
           fi
-          gh release upload "$RELEASE_TAG" "$ASSET" "$ASSET.sha256" --clobber
+          gh release upload "$RELEASE_TAG" "$ASSET" "$ASSET.sha256" SHA256SUMS --clobber
+          gh release edit "$RELEASE_TAG" --title "$title" --notes "$notes"

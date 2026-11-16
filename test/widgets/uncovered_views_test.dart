@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:fl_clash/common/app_update.dart';
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/l10n_labels.dart';
 import 'package:fl_clash/common/request.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -281,6 +283,9 @@ void main() {
     addTearDown(() => request.dio.httpClientAdapter = originalAdapter);
     final adapter = _PendingAdapter();
     request.dio.httpClientAdapter = adapter;
+    final originalSuffix = resolveSelfUpdateSuffix;
+    addTearDown(() => resolveSelfUpdateSuffix = originalSuffix);
+    resolveSelfUpdateSuffix = () => 'android-arm64.apk';
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -301,7 +306,7 @@ void main() {
 
     adapter.response.complete(
       ResponseBody.fromString(
-        jsonEncode({'tag_name': 'v0.0.0'}),
+        jsonEncode({'tag_name': releaseTag, 'name': 'v0.0.0'}),
         200,
         headers: {
           Headers.contentTypeHeader: [Headers.jsonContentType],

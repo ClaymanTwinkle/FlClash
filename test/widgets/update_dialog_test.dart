@@ -181,7 +181,7 @@ void main() {
   });
 
   group('a build that updates itself', () {
-    const asset = 'FlClash-0.8.96-android-arm64-v8a.apk';
+    const asset = 'FlClash-android-arm64.apk';
     final package = utf8.encode('package');
     final digest = sha256.convert(package).toString();
     late Directory home;
@@ -193,7 +193,7 @@ void main() {
       await useAppPaths(home);
       suffix = resolveSelfUpdateSuffix;
       adapter = request.releaseDio.httpClientAdapter;
-      resolveSelfUpdateSuffix = () => 'android-arm64-v8a.apk';
+      resolveSelfUpdateSuffix = () => 'android-arm64.apk';
     });
 
     tearDown(() async {

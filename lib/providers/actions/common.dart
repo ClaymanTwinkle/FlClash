@@ -163,7 +163,7 @@ class CommonAction extends _$CommonAction {
         if (suffix == null) {
           _openReleasePage();
         } else {
-          unawaited(_downloadUpdate(tag, releaseAssetName(tag, suffix)));
+          unawaited(_downloadUpdate(tag, releaseAssetName(suffix)));
         }
       } else if (!isUser && res == false) {
         ref
@@ -182,7 +182,9 @@ class CommonAction extends _$CommonAction {
 
   void _openReleasePage() {
     unawaited(
-      launchUrl(Uri.parse('https://github.com/$repository/releases/latest')),
+      launchUrl(
+        Uri.parse('https://github.com/$repository/releases/tag/$releaseTag'),
+      ),
     );
   }
 
@@ -199,7 +201,7 @@ class CommonAction extends _$CommonAction {
     );
     if (release == null) return;
     final tag = release['tag_name'] as String;
-    await _downloadUpdate(tag, releaseAssetName(tag, suffix));
+    await _downloadUpdate(tag, releaseAssetName(suffix));
   }
 
   Future<void> _downloadUpdate(String tag, String name) async {
@@ -215,7 +217,6 @@ class CommonAction extends _$CommonAction {
       await Directory(directory).create(recursive: true);
       var shown = 0;
       final path = await request.downloadVerifiedRelease(
-        tag: tag,
         name: name,
         directory: directory,
         cancelToken: cancelToken,
