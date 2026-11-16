@@ -193,8 +193,8 @@ also what CI runs; `tool/check_plugins.sh` does not descend into it. It must sta
 run of `plugins/setup` would execute the build hook itself.
 
 Native plugin code under `plugins/*/{linux,macos,windows}` is compiled by the CI `desktop` job, which runs
-`flutter build <platform> --debug` on every branch push, and by the release matrix on a tag; `tool/check_plugins.sh`
-only analyzes and tests the Dart side.
+`flutter build <platform> --debug` on every push to `main` and every pull request, and by the release matrix on a tag;
+`tool/check_plugins.sh` only analyzes and tests the Dart side.
 
 Root `flutter test` only discovers the root package's `test/` directory by default. Include bundled plugin Dart tests by passing paths explicitly, or run `flutter test` from that plugin package directory, or run `bash tool/check_plugins.sh` to analyze and test every plugin package the way CI does. Native plugin tests under platform folders are not run by `flutter test`.
 
@@ -348,8 +348,9 @@ release matrix in `build.yaml`, so a renamed artifact needs the same change in `
 
 ## Verify
 
-In the public repository every branch push runs the `dart` job; in the private
-`origin` every check job runs only when started by hand (`workflow_dispatch`).
+In the public repository every push to `main` and every pull request runs the `dart` job; other branch pushes run
+nothing, so open a pull request to get a branch checked. In the private `origin` every check job runs only when started
+by hand (`workflow_dispatch`).
 The `dart` job performs these root-package checks in order:
 
 ```bash
@@ -367,14 +368,14 @@ new hook script needs only its test file next to it, not a workflow step.
 
 Run `flutter analyze --no-fatal-infos` before committing; CI runs the same command and fails on a warning or error.
 
-Release builds run only for `v*` tag pushes; pull requests trigger nothing.
+Release builds run only for `v*` tag pushes.
 Root analysis excludes `plugins/**`, and root tests do not discover nested
 plugin packages, so parallel jobs validate the rest from their own package
 directories: `plugins` (local Flutter packages and the setup build tool), `go`
 (the Core wrapper, plus a vet of the Android files), `android` (JVM unit tests
 for `:common`, `:service` and `:app`, with the Flutter compile tasks excluded
 and the gomobile AAR built for one ABI), `rust` (both crates), and a
-Windows runner for the helper's `windows-service` feature. On branch pushes a
+Windows runner for the helper's `windows-service` feature. On `main` and pull requests a
 `desktop` job also compiles a debug build per desktop platform; a tag skips it,
 since its release matrix compiles the same native code. Release builds run only
 in the public repository and start alongside the checks; `upload` publishes
