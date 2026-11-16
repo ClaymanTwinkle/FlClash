@@ -1,11 +1,14 @@
 name: build
 
 on:
+  # Branches are checked through their pull request, not on push, so no commit is built twice on its way to main:
+  # GitHub pauses the workflows of a repository whose Actions volume grows too large.
   push:
     branches:
-      - '**'
+      - main
     tags:
       - 'v*'
+  pull_request:
   workflow_dispatch:
 
 concurrency:
