@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -186,7 +187,7 @@ Future<int> _package(
     'git',
     'https://github.com/chen08209/flutter_distributor.git',
     '--git-ref',
-    'v0.6.11-flclash.4',
+    '47e263a8001aec32884b62c68dbb6a78d90e821b', // v0.6.11-flclash.4
     '--git-path',
     'packages/flutter_distributor',
   ]);
@@ -321,20 +322,33 @@ Future<int> _ensureLinuxDependencies() async {
     return 0;
   }
   stdout.writeln('Downloading appimagetool...');
-  final downloadName =
-      'appimagetool-${appImageToolArch(_detectArch())}.AppImage';
+  final arch = appImageToolArch(_detectArch());
+  final downloadName = 'appimagetool-$arch.AppImage';
+  const download = '$appimagetool.download';
   final dlResult = await Process.run('wget', [
     '-O',
-    appimagetool,
+    download,
     'https://github.com/AppImage/AppImageKit/releases/download/continuous/$downloadName',
   ]);
   if (dlResult.exitCode != 0) {
     stderr.write(dlResult.stderr);
     return dlResult.exitCode;
   }
+  final digest = sha256.convert(await File(download).readAsBytes()).toString();
+  if (digest != _appImageToolSha256[arch]) {
+    await File(download).delete();
+    stderr.writeln('$downloadName does not match its pinned SHA-256: $digest');
+    return 1;
+  }
+  await File(download).rename(appimagetool);
   await Process.run('chmod', ['+x', appimagetool]);
   return 0;
 }
+
+const _appImageToolSha256 = {
+  'x86_64': 'b90f4a8b18967545fda78a445b27680a1642f1ef9488ced28b65398f2be7add2',
+  'aarch64': 'a48972e5ae91c944c5a7c80214e7e0a42dd6aa3ae979d8756203512a74ff574d',
+};
 
 String appImageToolArch(String arch) {
   return arch == 'arm64' ? 'aarch64' : 'x86_64';
