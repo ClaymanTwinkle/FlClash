@@ -8,53 +8,28 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('selfUpdateAssetSuffix', () {
-    test('names the APK built for the running ABI', () {
-      expect(
-        selfUpdateAssetSuffix(Abi.androidArm64, windowsInstalled: false),
-        'android-arm64-v8a.apk',
-      );
-      expect(
-        selfUpdateAssetSuffix(Abi.androidArm, windowsInstalled: false),
-        'android-armeabi-v7a.apk',
-      );
-      expect(
-        selfUpdateAssetSuffix(Abi.androidX64, windowsInstalled: false),
-        'android-x86_64.apk',
-      );
+    test('names the arm64 APK the fork publishes', () {
+      expect(selfUpdateAssetSuffix(Abi.androidArm64), 'android-arm64.apk');
     });
 
-    test('names the Windows installer only for an installed build', () {
-      expect(
-        selfUpdateAssetSuffix(Abi.windowsX64, windowsInstalled: true),
-        'windows-amd64-setup.exe',
-      );
-      expect(
-        selfUpdateAssetSuffix(Abi.windowsArm64, windowsInstalled: true),
-        'windows-arm64-setup.exe',
-      );
-      expect(
-        selfUpdateAssetSuffix(Abi.windowsX64, windowsInstalled: false),
-        isNull,
-      );
-    });
-
-    test('leaves macOS and Linux to the release page', () {
+    test('leaves every unpublished build without an update', () {
       for (final abi in [
+        Abi.androidArm,
+        Abi.androidX64,
+        Abi.windowsX64,
+        Abi.windowsArm64,
         Abi.macosArm64,
         Abi.macosX64,
         Abi.linuxX64,
         Abi.linuxArm64,
       ]) {
-        expect(selfUpdateAssetSuffix(abi, windowsInstalled: true), isNull);
+        expect(selfUpdateAssetSuffix(abi), isNull);
       }
     });
   });
 
-  test('releaseAssetName drops the tag prefix', () {
-    expect(
-      releaseAssetName('v0.9.3', 'android-arm64-v8a.apk'),
-      'FlClash-0.9.3-android-arm64-v8a.apk',
-    );
+  test('releaseAssetName matches the asset the fork publishes', () {
+    expect(releaseAssetName('android-arm64.apk'), 'FlClash-android-arm64.apk');
   });
 
   group('releaseChecksum', () {

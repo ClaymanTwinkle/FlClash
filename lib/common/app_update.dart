@@ -9,7 +9,6 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show PlatformException;
-import 'package:path/path.dart';
 
 const releaseChecksumsName = 'SHA256SUMS';
 
@@ -35,32 +34,24 @@ final class UpdateReady extends UpdateDownload {
 }
 
 @visibleForTesting
-String? Function() resolveSelfUpdateSuffix = () => selfUpdateAssetSuffix(
-  Abi.current(),
-  windowsInstalled: system.isWindows && isInstalledWindowsBuild,
-);
+String? Function() resolveSelfUpdateSuffix = () =>
+    selfUpdateAssetSuffix(Abi.current());
 
 String? get selfUpdateSuffix => resolveSelfUpdateSuffix();
 
-// The names follow the release matrix in .github/workflows/build.yaml.
-String? selfUpdateAssetSuffix(Abi abi, {required bool windowsInstalled}) {
-  return switch (abi) {
-    Abi.androidArm64 => 'android-arm64-v8a.apk',
-    Abi.androidArm => 'android-armeabi-v7a.apk',
-    Abi.androidX64 => 'android-x86_64.apk',
-    Abi.windowsX64 when windowsInstalled => 'windows-amd64-setup.exe',
-    Abi.windowsArm64 when windowsInstalled => 'windows-arm64-setup.exe',
-    _ => null,
-  };
+// .github/workflows/fork-android.yml publishes the arm64 APK alone; every
+// other build has no release to update from.
+String? selfUpdateAssetSuffix(Abi abi) {
+  return abi == Abi.androidArm64 ? 'android-arm64.apk' : null;
 }
 
-String releaseAssetName(String tag, String suffix) {
-  final version = tag.startsWith('v') ? tag.substring(1) : tag;
-  return '$appName-$version-$suffix';
-}
+String releaseAssetName(String suffix) => '$appName-$suffix';
 
-Uri releaseAssetUri(String tag, String name) {
-  return Uri.https('github.com', '/$repository/releases/download/$tag/$name');
+Uri releaseAssetUri(String name) {
+  return Uri.https(
+    'github.com',
+    '/$repository/releases/download/$releaseTag/$name',
+  );
 }
 
 final _checksumLine = RegExp(r'^([0-9a-fA-F]{64}) [ *](?:\./)?(.+)$');
@@ -98,11 +89,6 @@ Future<void> clearUpdateDownloads() async {
       logLevel: LogLevel.warning,
     );
   }
-}
-
-// Inno Setup writes unins000.exe beside the app; the portable zip has none.
-bool get isInstalledWindowsBuild {
-  return File(join(appPath.executableDirPath, 'unins000.exe')).existsSync();
 }
 
 // inno_setup.iss waits for `updatefrom` to exit, then relaunches the app.

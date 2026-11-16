@@ -22,24 +22,6 @@ class _StalledHttpClient extends Fake implements HttpClient {
       Completer<HttpClientRequest>().future;
 }
 
-class _HostAdapter implements HttpClientAdapter {
-  _HostAdapter(this.byHost);
-
-  final Map<String, ResponseBody Function()> byHost;
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    return byHost[options.uri.host]!();
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
-
 class _PathAdapter implements HttpClientAdapter {
   _PathAdapter(this.byPath);
 
@@ -90,59 +72,41 @@ void main() {
   });
 
   group('latestRelease', () {
-    Request requestAnswering(Map<String, ResponseBody Function()> byHost) {
-      return Request()..dio.httpClientAdapter = _HostAdapter(byHost);
+    const path = '/repos/$repository/releases/tags/$releaseTag';
+
+    Request requestAnswering(ResponseBody Function() response) {
+      return Request()..dio.httpClientAdapter = _PathAdapter({path: response});
     }
 
-    test('reads the release from the API', () async {
-      final request = requestAnswering({
-        'api.github.com': () => ResponseBody.fromString(
-          '{"tag_name":"v1.2.3","body":"notes"}',
+    test('reads the version from the rolling release title', () async {
+      final request = requestAnswering(
+        () => ResponseBody.fromString(
+          '{"tag_name":"$releaseTag","name":"v1.2.3+2026111601",'
+          '"body":"notes"}',
           200,
           headers: {
             Headers.contentTypeHeader: [Headers.jsonContentType],
           },
         ),
-      });
+      );
 
       expect(await request.latestRelease(), {
-        'tag_name': 'v1.2.3',
+        'tag_name': 'v1.2.3+2026111601',
         'body': 'notes',
       });
     });
 
-    test(
-      'falls back to the release page when the API is rate limited',
-      () async {
-        final request = requestAnswering({
-          'api.github.com': () => ResponseBody.fromString('{}', 403),
-          'github.com': () => ResponseBody.fromString(
-            '',
-            302,
-            headers: {
-              HttpHeaders.locationHeader: [
-                'https://github.com/owner/repo/releases/tag/v1.2.4',
-              ],
-            },
-          ),
-        });
-
-        expect(await request.latestRelease(), {'tag_name': 'v1.2.4'});
-      },
-    );
-
-    test('fails instead of answering when neither endpoint does', () async {
-      final request = requestAnswering({
-        'api.github.com': () => ResponseBody.fromString('{}', 403),
-        'github.com': () => ResponseBody.fromString('', 503),
-      });
+    test('fails instead of answering when the API does not', () async {
+      final request = requestAnswering(
+        () => ResponseBody.fromString('{}', 403),
+      );
 
       await expectLater(request.latestRelease(), throwsA(isA<DioException>()));
     });
   });
 
   group('downloadVerifiedRelease', () {
-    const name = 'FlClash-1.2.3-android-arm64-v8a.apk';
+    const name = 'FlClash-android-arm64.apk';
     final package = utf8.encode('package');
     final digest = sha256.convert(package).toString();
     late Directory directory;
@@ -156,16 +120,15 @@ void main() {
     Request requestServing(String sums, List<int> asset) {
       return Request()
         ..releaseDio.httpClientAdapter = _PathAdapter({
-          '/$repository/releases/download/v1.2.3/SHA256SUMS': () =>
+          '/$repository/releases/download/$releaseTag/SHA256SUMS': () =>
               ResponseBody.fromString(sums, 200),
-          '/$repository/releases/download/v1.2.3/$name': () =>
+          '/$repository/releases/download/$releaseTag/$name': () =>
               ResponseBody.fromBytes(asset, 200),
         });
     }
 
     Future<String> download(Request request) {
       return request.downloadVerifiedRelease(
-        tag: 'v1.2.3',
         name: name,
         directory: directory.path,
       );

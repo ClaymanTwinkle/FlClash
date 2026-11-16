@@ -106,53 +106,39 @@ class Request {
 
   /// Null when this build is current; throws when GitHub cannot be asked.
   Future<Map<String, dynamic>?> checkForUpdate() async {
+    if (selfUpdateSuffix == null) return null;
     final release = await latestRelease();
     final remoteVersion = release['tag_name'] as String;
-    final version = globalState.packageInfo.version;
+    final info = globalState.packageInfo;
+    final version = [
+      info.version,
+      if (info.buildNumber.isNotEmpty) info.buildNumber,
+    ].join('+');
     final hasUpdate =
         compareVersions(remoteVersion.replaceAll('v', ''), version) > 0;
     return hasUpdate ? release : null;
   }
 
-  /// The release page redirect still answers once the hourly API quota is spent.
+  /// Every main build replaces the assets of one rolling release, so the
+  /// version lives in its title, `v<versionName>+<versionCode>`, which
+  /// .github/workflows/fork-android.yml writes.
   Future<Map<String, dynamic>> latestRelease() async {
-    try {
-      final response = await dio.get<Map<String, dynamic>>(
-        'https://api.github.com/repos/$repository/releases/latest',
-        options: Options(responseType: ResponseType.json),
-      );
-      return response.data!;
-    } on DioException catch (error) {
-      commonPrint.log(
-        'latest release API failed: ${compactError(error)}',
-        logLevel: LogLevel.warning,
-      );
-    }
-    final response = await dio.get<void>(
-      'https://github.com/$repository/releases/latest',
-      options: Options(
-        followRedirects: false,
-        validateStatus: (status) => status != null && status < 400,
-      ),
+    final response = await dio.get<Map<String, dynamic>>(
+      'https://api.github.com/repos/$repository/releases/tags/$releaseTag',
+      options: Options(responseType: ResponseType.json),
     );
-    final location = response.headers.value(HttpHeaders.locationHeader);
-    final segments = Uri.tryParse(location ?? '')?.pathSegments ?? const [];
-    final tagIndex = segments.indexOf('tag') + 1;
-    if (tagIndex == 0 || tagIndex >= segments.length) {
-      throw FormatException('No release tag in the redirect', location);
-    }
-    return {'tag_name': segments[tagIndex]};
+    final release = response.data!;
+    return {'tag_name': release['name'], 'body': release['body']};
   }
 
   Future<String> downloadVerifiedRelease({
-    required String tag,
     required String name,
     required String directory,
     ProgressCallback? onReceiveProgress,
     CancelToken? cancelToken,
   }) async {
     final sums = await releaseDio.getUri<String>(
-      releaseAssetUri(tag, releaseChecksumsName),
+      releaseAssetUri(releaseChecksumsName),
       options: Options(responseType: ResponseType.plain),
       cancelToken: cancelToken,
     );
@@ -161,7 +147,7 @@ class Request {
       throw ReleaseNotVerifiedException(name);
     }
     final path = join(directory, name);
-    final uri = releaseAssetUri(tag, name);
+    final uri = releaseAssetUri(name);
     if (app case final android?) {
       await android.downloadFile(
         uri,
