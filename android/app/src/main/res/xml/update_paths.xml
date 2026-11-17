@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AppPath.updateDirPath on Android, under getExternalFilesDir(DIRECTORY_DOWNLOADS). -->
+<paths>
+    <external-files-path
+        name="update"
+        path="Download/FlClash/update/" />
+</paths>
