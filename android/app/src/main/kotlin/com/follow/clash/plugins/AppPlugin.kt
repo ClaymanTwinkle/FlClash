@@ -27,6 +27,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -457,6 +458,10 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             callback,
             supersededValue = PackageInstaller.STATUS_FAILURE_ABORTED,
         )
+        if (isStockMiui) {
+            openSystemInstaller(apk)
+            return
+        }
         scope.launch(Dispatchers.IO) {
             try {
                 commitInstallSession(apk)
@@ -464,6 +469,40 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 GlobalState.log("Package install failed: $error")
                 installPackageCallback.resolve(PackageInstaller.STATUS_FAILURE)
             }
+        }
+    }
+
+    // Stock MIUI and HyperOS fail a session install unless the user turns their optimization
+    // off in developer options, which is why F-Droid stops using sessions there as well.
+    private val isStockMiui by lazy {
+        listOf("com.miui.securitycenter", "com.miui.packageinstaller").any {
+            runCatching {
+                GlobalState.application.packageManager.getPackageInfo(it, 0)
+            }.isSuccess
+        }
+    }
+
+    private fun openSystemInstaller(apk: File) = onMainThread {
+        val activity = activity
+        if (activity == null) {
+            installPackageCallback.resolve(PackageInstaller.STATUS_FAILURE)
+            return@onMainThread
+        }
+        try {
+            val uri = FileProvider.getUriForFile(
+                activity,
+                "${activity.packageName}.update_provider",
+                apk,
+            )
+            @Suppress("DEPRECATION")
+            val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
+                .setDataAndType(uri, "application/vnd.android.package-archive")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .putExtra(Intent.EXTRA_RETURN_RESULT, true)
+            activity.startActivityForResult(intent, INSTALL_PACKAGE_REQUEST_CODE)
+        } catch (error: Exception) {
+            GlobalState.log("Package install failed: $error")
+            installPackageCallback.resolve(PackageInstaller.STATUS_FAILURE)
         }
     }
 
@@ -832,13 +871,26 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         invokeRequestInstalledAppsCallback(false)
     }
 
-    private fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        if (requestCode != VPN_PERMISSION_REQUEST_CODE) {
-            return false
+    private fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean =
+        when (requestCode) {
+            VPN_PERMISSION_REQUEST_CODE -> {
+                invokeVpnPrepareCallback(resultCode == Activity.RESULT_OK)
+                true
+            }
+
+            INSTALL_PACKAGE_REQUEST_CODE -> {
+                installPackageCallback.resolve(
+                    when (resultCode) {
+                        Activity.RESULT_OK -> PackageInstaller.STATUS_SUCCESS
+                        Activity.RESULT_CANCELED -> PackageInstaller.STATUS_FAILURE_ABORTED
+                        else -> PackageInstaller.STATUS_FAILURE
+                    },
+                )
+                true
+            }
+
+            else -> false
         }
-        invokeVpnPrepareCallback(resultCode == Activity.RESULT_OK)
-        return true
-    }
 
     private fun onRequestPermissionsResultListener(
         requestCode: Int,
@@ -877,6 +929,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
         const val INSTALLED_APPS_PERMISSION_REQUEST_CODE = 1003
         const val LOCAL_NETWORK_PERMISSION_REQUEST_CODE = 1004
+        const val INSTALL_PACKAGE_REQUEST_CODE = 1005
         const val INSTALL_STATUS_ACTION = "${Components.PACKAGE_NAME}.action.INSTALL_STATUS"
     }
 }

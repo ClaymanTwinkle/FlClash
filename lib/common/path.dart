@@ -121,7 +121,7 @@ class AppPath {
     final directory = system.isAndroid
         ? await downloadDirPath
         : (await cacheDir.future).path;
-    return join(directory, 'update');
+    return join(directory, appName, 'update');
   }
 
   Future<String> get lockFilePath async {

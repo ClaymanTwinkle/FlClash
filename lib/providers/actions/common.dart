@@ -206,7 +206,15 @@ class CommonAction extends _$CommonAction {
 
   Future<void> _downloadUpdate(String tag, String name) async {
     final download = ref.read(updateDownloadStateProvider.notifier);
-    if (download.value != null) return;
+    switch (download.value) {
+      case UpdateDownloading():
+        return;
+      case UpdateReady(tag: final readyTag) when readyTag == tag:
+        return installUpdate();
+      case UpdateReady():
+        await discardUpdate();
+      case null:
+    }
     final cancelToken = CancelToken();
     _updateCancelToken = cancelToken;
     download.value = UpdateDownloading(tag);
@@ -272,9 +280,11 @@ class CommonAction extends _$CommonAction {
     final download = ref.read(updateDownloadStateProvider);
     if (download is! UpdateReady) return;
     if (system.isAndroid) {
-      ref.read(updateDownloadStateProvider.notifier).value = null;
+      final state = ref.read(updateDownloadStateProvider.notifier);
+      state.value = null;
       final status = await app?.installPackage(download.path);
-      await clearUpdateDownloads();
+      // An accepted update ends this process, so the package is kept for another try.
+      state.value ??= download;
       if (status != null && packageInstallFailed(status)) {
         await _showUpdateFailure(currentAppLocalizations.updateInstallFailed);
       }
